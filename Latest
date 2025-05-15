@@ -1,36 +1,16 @@
--- Load Rayfield Library
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+-- Load Rayfield properly
+local RayfieldLoaded = false
+local Rayfield = nil
 
--- Wait for PlayerGui to be ready
-local Players = game:GetService("Players")
-local plr = Players.LocalPlayer
-repeat wait() until plr:FindFirstChild("PlayerGui")
+task.spawn(function()
+    Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+    RayfieldLoaded = true
+end)
 
--- Setup number animation and formatting
-local function formatAbbreviated(n)
-	if n >= 1e9 then
-		return string.format("%.1fb", n / 1e9)
-	elseif n >= 1e6 then
-		return string.format("%.1fm", n / 1e6)
-	elseif n >= 1e3 then
-		return string.format("%.1fk", n / 1e3)
-	else
-		return tostring(n)
-	end
-end
+-- Wait for Rayfield to load fully
+repeat task.wait() until RayfieldLoaded and Rayfield and typeof(Rayfield.CreateWindow) == "function"
 
-local function animateCount(startValue, endValue, label)
-	local steps = 50
-	local diff = endValue - startValue
-	for i = 1, steps do
-		local intermediate = math.floor(startValue + (diff * (i / steps)))
-		label.Text = formatAbbreviated(intermediate)
-		task.wait(0.02)
-	end
-	label.Text = formatAbbreviated(endValue)
-end
-
--- Create Rayfield Window AFTER it loads
+-- Create window AFTER Rayfield is fully initialized
 local Window = Rayfield:CreateWindow({
 	Name = "Nil Scripts || Pet Simulator 99 🐶",
 	LoadingTitle = "Nil Scripts",
@@ -44,11 +24,36 @@ local Window = Rayfield:CreateWindow({
 	KeySystem = false,
 })
 
--- Create tabs
+-- Tabs
 local MainTab = Window:CreateTab("Main", 4483362458)
 local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
 
--- Gems Generator Input
+-- Abbreviation formatter
+local function formatAbbreviated(n)
+	if n >= 1e9 then
+		return string.format("%.1fb", n / 1e9)
+	elseif n >= 1e6 then
+		return string.format("%.1fm", n / 1e6)
+	elseif n >= 1e3 then
+		return string.format("%.1fk", n / 1e3)
+	else
+		return tostring(n)
+	end
+end
+
+-- Number animation
+local function animateCount(startValue, endValue, label)
+	local steps = 50
+	local diff = endValue - startValue
+	for i = 1, steps do
+		local intermediate = math.floor(startValue + (diff * (i / steps)))
+		label.Text = formatAbbreviated(intermediate)
+		task.wait(0.02)
+	end
+	label.Text = formatAbbreviated(endValue)
+end
+
+-- Gems Generator Input + Button
 local gemAmount = 0
 GemsTab:CreateInput({
 	Name = "Enter Gem Amount",
@@ -62,12 +67,11 @@ GemsTab:CreateInput({
 	end,
 })
 
--- Generate Button
 GemsTab:CreateButton({
 	Name = "Generate Gems",
 	Callback = function()
 		local success, amountLabel = pcall(function()
-			return plr.PlayerGui
+			return game:GetService("Players").LocalPlayer.PlayerGui
 				:WaitForChild("MainLeft")
 				:WaitForChild("Left")
 				:WaitForChild("Currency")
@@ -84,9 +88,9 @@ GemsTab:CreateButton({
 			end
 		else
 			Rayfield:Notify({
-				Title = "Error!",
-				Content = "Couldn't find the Diamonds GUI!",
-				Duration = 5,
+				Title = "Error",
+				Content = "Could not find the Diamonds label",
+				Duration = 4,
 			})
 		end
 	end,

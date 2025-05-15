@@ -3,7 +3,7 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
 
--- Rayfield window
+-- Create the Rayfield window
 local Window = Rayfield:CreateWindow({
 	Name = "Nil Scripts || Pet Simulator 99 🐶",
 	LoadingTitle = "Nil Scripts",
@@ -17,13 +17,13 @@ local Window = Rayfield:CreateWindow({
 	KeySystem = false,
 })
 
--- Main tab
-Window:CreateTab("Main")
+-- Wait for the Rayfield GUI to finish loading
+Rayfield:Load()
 
--- Gems Generator tab
+-- Now we can create tabs and UI elements
+local MainTab = Window:CreateTab("Main")
 local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
 
--- Store input value
 local gemAmount = 0
 
 -- TextBox
@@ -39,23 +39,20 @@ GemsTab:CreateInput({
 	end,
 })
 
--- Abbreviated number formatter
+-- Formatter for abbreviated numbers
 local function formatAbbreviated(n)
 	if n >= 1e9 then
-		local num = n / 1e9
-		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "b") or (string.format("%.1f", num) .. "b")
+		return string.format("%.1fb", n / 1e9)
 	elseif n >= 1e6 then
-		local num = n / 1e6
-		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "m") or (string.format("%.1f", num) .. "m")
+		return string.format("%.1fm", n / 1e6)
 	elseif n >= 1e3 then
-		local num = n / 1e3
-		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "k") or (string.format("%.1f", num) .. "k")
+		return string.format("%.1fk", n / 1e3)
 	else
 		return tostring(n)
 	end
 end
 
--- Animation function
+-- Animate the number change
 local function animateCount(startValue, endValue, label)
 	local steps = 50
 	local diff = endValue - startValue
@@ -67,7 +64,7 @@ local function animateCount(startValue, endValue, label)
 	label.Text = formatAbbreviated(endValue)
 end
 
--- Button to generate diamonds
+-- Generate Button
 GemsTab:CreateButton({
 	Name = "Generate Diamonds",
 	Callback = function()

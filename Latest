@@ -1,41 +1,170 @@
--- Load Rayfield UI Library local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Variables local Players = game:GetService("Players") local RunService = game:GetService("RunService") local plr = Players.LocalPlayer
+--> [< Variables >] <--
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local plr = Players.LocalPlayer
 
--- UI Setup local Window = Rayfield:CreateWindow({ Name = "Nil Scripts || Pet Simulator 99 🐶", LoadingTitle = "Loading Nil Scripts...", LoadingSubtitle = "by Agreed", Theme = "DarkBlue", })
+local pianoRemote = game:GetService("Workspace"):FindFirstChild("GlobalPianoConnector")
+if not pianoRemote then
+    Rayfield:Notify({
+        Title = "Error!",
+        Content = "Piano remote not found! Either patched or you didn't join the right game.",
+        Duration = 10,
+        Image = nil,
+    })
+end
 
--- Main Tab local MainTab = Window:CreateTab("Main")
+_G.crash = false
+_G.fling = false
+local flinging = false
+local flingDied
+local Noclipping = nil
+local Clip = true
+--> [< Variables >] <--
 
-MainTab:CreateSection("Ctrl + Shift + F7 to see ping!")
+local Window = Rayfield:CreateWindow({
+    Name = "▶ NilScripts || Pet Simulator 99 🐕 ◀",
+    Icon = 0,
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "by NilScripts 🥵",
+    Theme = "DarkBlue",
+})
 
-MainTab:CreateToggle({ Name = "Crash Everyone (Server Too)", CurrentValue = false, Callback = function(Value) _G.crash = Value local pianoRemote = workspace:FindFirstChild("GlobalPianoConnector") if not pianoRemote then Rayfield:Notify({ Title = "Error!", Content = "Piano remote not found!", Duration = 10 }) return end
+local Tab = Window:CreateTab("Main")
 
-if Value then
-        if plr.Character and plr.Character:FindFirstChildOfClass("Humanoid").Sit then
-            Rayfield:Notify({ Title = "Enabled!", Content = "Lag incoming!", Duration = 5 })
+local Section = Tab:CreateSection("Ctrl + Shift + F7 to see ping!")
+
+local Crasher = Tab:CreateToggle({
+    Name = "Crash Everyone (Server Too)",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.crash = Value
+        if Value then
+            if plr.Character.Humanoid.Sit then
+                Rayfield:Notify({
+                    Title = "Enabled!",
+                    Content = "The server will get laggier and people will freeze!",
+                    Duration = 5,
+                    Image = nil,
+                })
+            else
+                Rayfield:Notify({
+                    Title = "Error!",
+                    Content = "You must sit behind a piano to use this!",
+                    Duration = 2.5,
+                    Image = nil,
+                })
+                return
+            end
             while _G.crash do
-                for i = 1, 61 do pianoRemote:FireServer("play", i) end
+                for i = 1, 61 do
+                    pianoRemote:FireServer("play", i)
+                end
                 task.wait()
             end
             pianoRemote:FireServer("abort")
-            Rayfield:Notify({ Title = "Disabled!", Content = "Crash stopped.", Duration = 3 })
-        else
-            Rayfield:Notify({ Title = "Error!", Content = "You must sit at the piano!", Duration = 3 })
+            Rayfield:Notify({
+                Title = "Disabled!",
+                Content = "Hope you had fun using it ;)",
+                Duration = 2.5,
+                Image = nil,
+            })
         end
-    end
-end,
-
+    end,
 })
 
-MainTab:CreateSection("^^^ Works best against low-end devices! ^^^")
+local Section = Tab:CreateSection("^^^ Works best against low-end devices! ^^^")
 
-MainTab:CreateToggle({ Name = "Flinger", CurrentValue = false, Callback = function(Value) _G.fling = Value local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") if Value and root then local bav = Instance.new("BodyAngularVelocity", root) bav.Name = "FlingAngularVelocity" bav.AngularVelocity = Vector3.new(0, 99999, 0) bav.MaxTorque = Vector3.new(0, math.huge, 0) bav.P = math.huge for _, part in ipairs(plr.Character:GetChildren()) do if part:IsA("BasePart") then part.CanCollide = false part.Massless = true end end plr.Character:FindFirstChildOfClass("Humanoid").Died:Connect(function() bav:Destroy() end) elseif root then for _, obj in ipairs(root:GetChildren()) do if obj:IsA("BodyAngularVelocity") then obj:Destroy() end end end end, })
+local Flinger = Tab:CreateToggle({
+    Name = "Flinger",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.fling = Value
+        if Value then
+            if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                flinging = true
+                for _, child in pairs(plr.Character:GetDescendants()) do
+                    if child:IsA("BasePart") then
+                        child.CustomPhysicalProperties = PhysicalProperties.new(math.huge, 0.3, 0.5)
+                    end
+                end
 
-MainTab:CreateSlider({ Name = "Walkspeed", Range = {16, 160}, Increment = 1, CurrentValue = 16, Callback = function(Value) if plr.Character then plr.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Value end end, })
+                if Noclipping then
+                    Noclipping:Disconnect()
+                end
+                Clip = true
 
--- Diamond Generator Tab local GemsTab = Window:CreateTab("💎 Gems Generator") local Input = ""
+                local bambam = Instance.new("BodyAngularVelocity")
+                bambam.Name = "FlingAngularVelocity"
+                bambam.Parent = plr.Character:FindFirstChild("HumanoidRootPart")
+                bambam.AngularVelocity = Vector3.new(0, 99999, 0)
+                bambam.MaxTorque = Vector3.new(0, math.huge, 0)
+                bambam.P = math.huge
 
-GemsTab:CreateInput({ Name = "Enter Gem Amount", PlaceholderText = "e.g. 5000000", RemoveTextAfterFocusLost = false, Callback = function(Value) Input = Value end, })
+                for _, part in pairs(plr.Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                        part.Massless = true
+                        part.Velocity = Vector3.new(0, 0, 0)
+                    end
+                end
 
-GemsTab:CreateButton({ Name = "Generate Gems", Callback = function()
+                flingDied = plr.Character:FindFirstChildOfClass("Humanoid").Died:Connect(function()
+                    flinging = false
+                    if flingDied then
+                        flingDied:Disconnect()
+                    end
+                    for _, child in pairs(plr.Character:FindFirstChild("HumanoidRootPart"):GetChildren()) do
+                        if child.ClassName == "BodyAngularVelocity" then
+                            child:Destroy()
+                        end
+                    end
 
+                    for _, part in pairs(plr.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5)
+                        end
+                    end
+                end)
+
+                while flinging do
+                    bambam.AngularVelocity = Vector3.new(0, 99999, 0)
+                    wait(0.2)
+                    bambam.AngularVelocity = Vector3.new(0, 0, 0)
+                    wait(0.1)
+                end
+            end
+        else
+            flinging = false
+            if flingDied then
+                flingDied:Disconnect()
+            end
+            if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                for _, child in pairs(plr.Character:FindFirstChild("HumanoidRootPart"):GetChildren()) do
+                    if child.ClassName == "BodyAngularVelocity" then
+                        child:Destroy()
+                    end
+                end
+
+                for _, part in pairs(plr.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5)
+                    end
+                end
+            end
+        end
+    end,
+})
+
+local Slider = Tab:CreateSlider({
+    Name = "Walkspeed",
+    Range = {16, 160},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 16,
+    Flag = "Walkspeed",
+    Callback = function(Value)
+        plr.Character.Humanoid.WalkSpeed = Value
+    end,
+})

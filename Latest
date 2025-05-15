@@ -1,35 +1,39 @@
--- Load Rayfield
+local RayfieldLoaded = false
+
+-- Load Rayfield manually
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
--- Wait until Rayfield is fully loaded
-repeat task.wait() until Rayfield and Rayfield.CreateWindow
+-- Attempt to hook the CreateWindow method ASAP
+repeat
+    task.wait()
+    RayfieldLoaded = Rayfield and Rayfield.CreateWindow ~= nil
+until RayfieldLoaded
 
--- Services
+-- FORCE Rayfield main GUI to show
+local success, gui = pcall(function()
+    return game:GetService("CoreGui"):FindFirstChild("Rayfield")
+end)
+if success and gui then
+    gui.Enabled = true
+end
+
+-- Setup
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
 
--- Formatter
 local function formatAbbreviated(n)
-	if n >= 1e9 then
-		local num = n / 1e9
-		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "b") or (string.format("%.1f", num) .. "b")
-	elseif n >= 1e6 then
-		local num = n / 1e6
-		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "m") or (string.format("%.1f", num) .. "m")
-	elseif n >= 1e3 then
-		local num = n / 1e3
-		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "k") or (string.format("%.1f", num) .. "k")
-	else
-		return tostring(n)
+	if n >= 1e9 then return string.format("%.1fb", n/1e9)
+	elseif n >= 1e6 then return string.format("%.1fm", n/1e6)
+	elseif n >= 1e3 then return string.format("%.1fk", n/1e3)
+	else return tostring(n)
 	end
 end
 
 local function animateCount(startValue, endValue, label)
 	local steps = 50
-	local diff = endValue - startValue
 	for i = 1, steps do
-		local intermediate = math.floor(startValue + (diff * (i / steps)))
-		label.Text = formatAbbreviated(intermediate)
+		local val = math.floor(startValue + ((endValue - startValue) * i / steps))
+		label.Text = formatAbbreviated(val)
 		task.wait(0.02)
 	end
 	label.Text = formatAbbreviated(endValue)
@@ -39,13 +43,9 @@ end
 local Window = Rayfield:CreateWindow({
 	Name = "Nil Scripts || Pet Simulator 99 🐶",
 	LoadingTitle = "Nil Scripts Loader",
-	LoadingSubtitle = "by You",
-	ConfigurationSaving = {
-		Enabled = false
-	},
-	Discord = {
-		Enabled = false
-	},
+	LoadingSubtitle = "Mobile Patch",
+	ConfigurationSaving = { Enabled = false },
+	Discord = { Enabled = false },
 	KeySystem = false,
 })
 
@@ -53,15 +53,13 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 local GemsTab = Window:CreateTab("💎 Gems Generator", 4483362458)
 
--- Gems Generator UI
+-- Gems Generator logic
 local Input = ""
 GemsTab:CreateInput({
 	Name = "Enter Gem Amount",
 	PlaceholderText = "e.g. 5000000",
 	RemoveTextAfterFocusLost = false,
-	Callback = function(Value)
-		Input = Value
-	end,
+	Callback = function(Value) Input = Value end,
 })
 
 GemsTab:CreateButton({
@@ -69,11 +67,7 @@ GemsTab:CreateButton({
 	Callback = function()
 		local amount = tonumber(Input)
 		if not amount then
-			Rayfield:Notify({
-				Title = "Error",
-				Content = "Enter a valid number.",
-				Duration = 4,
-			})
+			Rayfield:Notify({ Title = "Error", Content = "Enter a valid number.", Duration = 4 })
 			return
 		end
 

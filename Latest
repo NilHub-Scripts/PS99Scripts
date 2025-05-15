@@ -1,96 +1,97 @@
-local RayfieldLoaded = false
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Load Rayfield manually
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-
--- Attempt to hook the CreateWindow method ASAP
-repeat
-    task.wait()
-    RayfieldLoaded = Rayfield and Rayfield.CreateWindow ~= nil
-until RayfieldLoaded
-
--- FORCE Rayfield main GUI to show
-local success, gui = pcall(function()
-    return game:GetService("CoreGui"):FindFirstChild("Rayfield")
-end)
-if success and gui then
-    gui.Enabled = true
-end
-
--- Setup
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local plr = Players.LocalPlayer
 
-local function formatAbbreviated(n)
-	if n >= 1e9 then return string.format("%.1fb", n/1e9)
-	elseif n >= 1e6 then return string.format("%.1fm", n/1e6)
-	elseif n >= 1e3 then return string.format("%.1fk", n/1e3)
-	else return tostring(n)
-	end
-end
-
-local function animateCount(startValue, endValue, label)
-	local steps = 50
-	for i = 1, steps do
-		local val = math.floor(startValue + ((endValue - startValue) * i / steps))
-		label.Text = formatAbbreviated(val)
-		task.wait(0.02)
-	end
-	label.Text = formatAbbreviated(endValue)
-end
-
--- Create GUI
+-- Create the window
 local Window = Rayfield:CreateWindow({
-	Name = "Nil Scripts || Pet Simulator 99 🐶",
-	LoadingTitle = "Nil Scripts Loader",
-	LoadingSubtitle = "Mobile Patch",
-	ConfigurationSaving = { Enabled = false },
-	Discord = { Enabled = false },
-	KeySystem = false,
+    Name = "Nil Scripts || Pet Simulator 99 🐶",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "Please wait...",
+    ConfigurationSaving = {
+        Enabled = false,
+    },
+    Discord = {
+        Enabled = false,
+    },
+    KeySystem = false,
+    Theme = Rayfield.Themes.Dark,
 })
 
--- Tabs
+-- Main Tab
 local MainTab = Window:CreateTab("Main", 4483362458)
-local GemsTab = Window:CreateTab("💎 Gems Generator", 4483362458)
+MainTab:CreateSection("Basic Tools")
 
--- Gems Generator logic
-local Input = ""
-GemsTab:CreateInput({
-	Name = "Enter Gem Amount",
-	PlaceholderText = "e.g. 5000000",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(Value) Input = Value end,
+MainTab:CreateSlider({
+    Name = "Walkspeed",
+    Range = {16, 160},
+    Increment = 1,
+    CurrentValue = 16,
+    Callback = function(Value)
+        if plr.Character and plr.Character:FindFirstChild("Humanoid") then
+            plr.Character.Humanoid.WalkSpeed = Value
+        end
+    end,
+})
+
+-- Gems Generator Tab
+local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
+GemsTab:CreateSection("Generate Gems")
+
+local InputBox
+local TargetAmountLabel = plr:WaitForChild("PlayerGui"):WaitForChild("BucksIndicatorApp")
+    :WaitForChild("CurrencyIndicator"):WaitForChild("Container"):WaitForChild("Amount")
+
+local function FormatNumber(n)
+    local s = tostring(n)
+    local formatted = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+    if formatted:sub(1, 1) == "," then
+        formatted = formatted:sub(2)
+    end
+    return formatted
+end
+
+local function AnimateGemUpdate(amount)
+    local current = tonumber(TargetAmountLabel.Text:gsub(",", "")) or 0
+    local target = current + amount
+    local steps = 30
+    local increment = (target - current) / steps
+
+    for i = 1, steps do
+        local val = math.floor(current + increment * i)
+        TargetAmountLabel.Text = FormatNumber(val)
+        wait(0.03)
+    end
+    TargetAmountLabel.Text = FormatNumber(target)
+end
+
+InputBox = GemsTab:CreateInput({
+    Name = "Gem Amount",
+    PlaceholderText = "Enter amount of gems",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Value)
+        -- Optional input check can go here
+    end,
 })
 
 GemsTab:CreateButton({
-	Name = "Generate Gems",
-	Callback = function()
-		local amount = tonumber(Input)
-		if not amount then
-			Rayfield:Notify({ Title = "Error", Content = "Enter a valid number.", Duration = 4 })
-			return
-		end
-
-		local success, result = pcall(function()
-			return plr:WaitForChild("PlayerGui")
-				:WaitForChild("MainLeft")
-				:WaitForChild("Left")
-				:WaitForChild("Currency")
-				:WaitForChild("Diamonds")
-				:WaitForChild("Diamonds")
-				:WaitForChild("Amount")
-		end)
-
-		if success and result and result:IsA("TextLabel") then
-			local currentText = result.Text:gsub(",", ""):lower()
-			local current = tonumber(currentText:match("%d+")) or 0
-			animateCount(current, amount, result)
-		else
-			Rayfield:Notify({
-				Title = "Error",
-				Content = "Couldn't find the Diamonds label.",
-				Duration = 5,
-			})
-		end
-	end,
+    Name = "Generate Gems",
+    Callback = function()
+        local val = tonumber(InputBox.Value)
+        if val then
+            AnimateGemUpdate(val)
+            Rayfield:Notify({
+                Title = "Success",
+                Content = "Gems generated!",
+                Duration = 2,
+            })
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Please enter a valid number.",
+                Duration = 2,
+            })
+        end
+    end,
 })

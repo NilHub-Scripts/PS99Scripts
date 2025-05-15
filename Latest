@@ -1,45 +1,12 @@
+-- Load Rayfield Library
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
+-- Wait for PlayerGui to be ready
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
+repeat wait() until plr:FindFirstChild("PlayerGui")
 
--- Create the Rayfield window
-local Window = Rayfield:CreateWindow({
-	Name = "Nil Scripts || Pet Simulator 99 🐶",
-	LoadingTitle = "Nil Scripts",
-	LoadingSubtitle = "Loading...",
-	ConfigurationSaving = {
-		Enabled = false,
-	},
-	Discord = {
-		Enabled = false,
-	},
-	KeySystem = false,
-})
-
--- Wait for the Rayfield GUI to finish loading
-Rayfield:Load()
-
--- Now we can create tabs and UI elements
-local MainTab = Window:CreateTab("Main")
-local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
-
-local gemAmount = 0
-
--- TextBox
-GemsTab:CreateInput({
-	Name = "Enter Diamond Amount",
-	PlaceholderText = "Type value here",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(Text)
-		local num = tonumber(Text)
-		if num then
-			gemAmount = num
-		end
-	end,
-})
-
--- Formatter for abbreviated numbers
+-- Setup number animation and formatting
 local function formatAbbreviated(n)
 	if n >= 1e9 then
 		return string.format("%.1fb", n / 1e9)
@@ -52,7 +19,6 @@ local function formatAbbreviated(n)
 	end
 end
 
--- Animate the number change
 local function animateCount(startValue, endValue, label)
 	local steps = 50
 	local diff = endValue - startValue
@@ -64,28 +30,63 @@ local function animateCount(startValue, endValue, label)
 	label.Text = formatAbbreviated(endValue)
 end
 
+-- Create Rayfield Window AFTER it loads
+local Window = Rayfield:CreateWindow({
+	Name = "Nil Scripts || Pet Simulator 99 🐶",
+	LoadingTitle = "Nil Scripts",
+	LoadingSubtitle = "Injecting gems...",
+	ConfigurationSaving = {
+		Enabled = false,
+	},
+	Discord = {
+		Enabled = false,
+	},
+	KeySystem = false,
+})
+
+-- Create tabs
+local MainTab = Window:CreateTab("Main", 4483362458)
+local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
+
+-- Gems Generator Input
+local gemAmount = 0
+GemsTab:CreateInput({
+	Name = "Enter Gem Amount",
+	PlaceholderText = "e.g. 999999",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(Text)
+		local num = tonumber(Text)
+		if num then
+			gemAmount = num
+		end
+	end,
+})
+
 -- Generate Button
 GemsTab:CreateButton({
-	Name = "Generate Diamonds",
+	Name = "Generate Gems",
 	Callback = function()
-		local diamondsLabel = plr:WaitForChild("PlayerGui")
-			:WaitForChild("MainLeft")
-			:WaitForChild("Left")
-			:WaitForChild("Currency")
-			:WaitForChild("Diamonds")
-			:WaitForChild("Diamonds")
-			:WaitForChild("Amount")
+		local success, amountLabel = pcall(function()
+			return plr.PlayerGui
+				:WaitForChild("MainLeft")
+				:WaitForChild("Left")
+				:WaitForChild("Currency")
+				:WaitForChild("Diamonds")
+				:WaitForChild("Diamonds")
+				:WaitForChild("Amount")
+		end)
 
-		local currentText = diamondsLabel.Text:gsub(",", ""):lower()
-		local current = tonumber(currentText:match("%d+")) or 0
-
-		if gemAmount and gemAmount > 0 then
-			animateCount(current, gemAmount, diamondsLabel)
+		if success and amountLabel then
+			local currentText = amountLabel.Text:gsub(",", ""):lower()
+			local current = tonumber(currentText:match("%d+")) or 0
+			if gemAmount > 0 then
+				animateCount(current, gemAmount, amountLabel)
+			end
 		else
 			Rayfield:Notify({
-				Title = "Invalid Input",
-				Content = "Please enter a valid number.",
-				Duration = 4,
+				Title = "Error!",
+				Content = "Couldn't find the Diamonds GUI!",
+				Duration = 5,
 			})
 		end
 	end,

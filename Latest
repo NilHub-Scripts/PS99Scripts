@@ -1,47 +1,29 @@
--- Load Rayfield properly
-local RayfieldLoaded = false
-local Rayfield = nil
+-- Load Rayfield
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
-task.spawn(function()
-    Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-    RayfieldLoaded = true
-end)
+-- Wait until Rayfield is fully loaded
+repeat task.wait() until Rayfield and Rayfield.CreateWindow
 
--- Wait for Rayfield to load fully
-repeat task.wait() until RayfieldLoaded and Rayfield and typeof(Rayfield.CreateWindow) == "function"
+-- Services
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
 
--- Create window AFTER Rayfield is fully initialized
-local Window = Rayfield:CreateWindow({
-	Name = "Nil Scripts || Pet Simulator 99 🐶",
-	LoadingTitle = "Nil Scripts",
-	LoadingSubtitle = "Injecting gems...",
-	ConfigurationSaving = {
-		Enabled = false,
-	},
-	Discord = {
-		Enabled = false,
-	},
-	KeySystem = false,
-})
-
--- Tabs
-local MainTab = Window:CreateTab("Main", 4483362458)
-local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
-
--- Abbreviation formatter
+-- Formatter
 local function formatAbbreviated(n)
 	if n >= 1e9 then
-		return string.format("%.1fb", n / 1e9)
+		local num = n / 1e9
+		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "b") or (string.format("%.1f", num) .. "b")
 	elseif n >= 1e6 then
-		return string.format("%.1fm", n / 1e6)
+		local num = n / 1e6
+		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "m") or (string.format("%.1f", num) .. "m")
 	elseif n >= 1e3 then
-		return string.format("%.1fk", n / 1e3)
+		local num = n / 1e3
+		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "k") or (string.format("%.1f", num) .. "k")
 	else
 		return tostring(n)
 	end
 end
 
--- Number animation
 local function animateCount(startValue, endValue, label)
 	local steps = 50
 	local diff = endValue - startValue
@@ -53,25 +35,50 @@ local function animateCount(startValue, endValue, label)
 	label.Text = formatAbbreviated(endValue)
 end
 
--- Gems Generator Input + Button
-local gemAmount = 0
+-- Create GUI
+local Window = Rayfield:CreateWindow({
+	Name = "Nil Scripts || Pet Simulator 99 🐶",
+	LoadingTitle = "Nil Scripts Loader",
+	LoadingSubtitle = "by You",
+	ConfigurationSaving = {
+		Enabled = false
+	},
+	Discord = {
+		Enabled = false
+	},
+	KeySystem = false,
+})
+
+-- Tabs
+local MainTab = Window:CreateTab("Main", 4483362458)
+local GemsTab = Window:CreateTab("💎 Gems Generator", 4483362458)
+
+-- Gems Generator UI
+local Input = ""
 GemsTab:CreateInput({
 	Name = "Enter Gem Amount",
-	PlaceholderText = "e.g. 999999",
+	PlaceholderText = "e.g. 5000000",
 	RemoveTextAfterFocusLost = false,
-	Callback = function(Text)
-		local num = tonumber(Text)
-		if num then
-			gemAmount = num
-		end
+	Callback = function(Value)
+		Input = Value
 	end,
 })
 
 GemsTab:CreateButton({
 	Name = "Generate Gems",
 	Callback = function()
-		local success, amountLabel = pcall(function()
-			return game:GetService("Players").LocalPlayer.PlayerGui
+		local amount = tonumber(Input)
+		if not amount then
+			Rayfield:Notify({
+				Title = "Error",
+				Content = "Enter a valid number.",
+				Duration = 4,
+			})
+			return
+		end
+
+		local success, result = pcall(function()
+			return plr:WaitForChild("PlayerGui")
 				:WaitForChild("MainLeft")
 				:WaitForChild("Left")
 				:WaitForChild("Currency")
@@ -80,17 +87,15 @@ GemsTab:CreateButton({
 				:WaitForChild("Amount")
 		end)
 
-		if success and amountLabel then
-			local currentText = amountLabel.Text:gsub(",", ""):lower()
+		if success and result and result:IsA("TextLabel") then
+			local currentText = result.Text:gsub(",", ""):lower()
 			local current = tonumber(currentText:match("%d+")) or 0
-			if gemAmount > 0 then
-				animateCount(current, gemAmount, amountLabel)
-			end
+			animateCount(current, amount, result)
 		else
 			Rayfield:Notify({
 				Title = "Error",
-				Content = "Could not find the Diamonds label",
-				Duration = 4,
+				Content = "Couldn't find the Diamonds label.",
+				Duration = 5,
 			})
 		end
 	end,

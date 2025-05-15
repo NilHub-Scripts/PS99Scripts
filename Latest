@@ -1,0 +1,95 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+
+-- Rayfield window
+local Window = Rayfield:CreateWindow({
+	Name = "Nil Scripts || Pet Simulator 99 🐶",
+	LoadingTitle = "Nil Scripts",
+	LoadingSubtitle = "Loading...",
+	ConfigurationSaving = {
+		Enabled = false,
+	},
+	Discord = {
+		Enabled = false,
+	},
+	KeySystem = false,
+})
+
+-- Main tab
+Window:CreateTab("Main")
+
+-- Gems Generator tab
+local GemsTab = Window:CreateTab("Gems Generator", 4483362458)
+
+-- Store input value
+local gemAmount = 0
+
+-- TextBox
+GemsTab:CreateInput({
+	Name = "Enter Diamond Amount",
+	PlaceholderText = "Type value here",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(Text)
+		local num = tonumber(Text)
+		if num then
+			gemAmount = num
+		end
+	end,
+})
+
+-- Abbreviated number formatter
+local function formatAbbreviated(n)
+	if n >= 1e9 then
+		local num = n / 1e9
+		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "b") or (string.format("%.1f", num) .. "b")
+	elseif n >= 1e6 then
+		local num = n / 1e6
+		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "m") or (string.format("%.1f", num) .. "m")
+	elseif n >= 1e3 then
+		local num = n / 1e3
+		return (num % 1 == 0) and (tostring(num):match("^%d+") .. "k") or (string.format("%.1f", num) .. "k")
+	else
+		return tostring(n)
+	end
+end
+
+-- Animation function
+local function animateCount(startValue, endValue, label)
+	local steps = 50
+	local diff = endValue - startValue
+	for i = 1, steps do
+		local intermediate = math.floor(startValue + (diff * (i / steps)))
+		label.Text = formatAbbreviated(intermediate)
+		task.wait(0.02)
+	end
+	label.Text = formatAbbreviated(endValue)
+end
+
+-- Button to generate diamonds
+GemsTab:CreateButton({
+	Name = "Generate Diamonds",
+	Callback = function()
+		local diamondsLabel = plr:WaitForChild("PlayerGui")
+			:WaitForChild("MainLeft")
+			:WaitForChild("Left")
+			:WaitForChild("Currency")
+			:WaitForChild("Diamonds")
+			:WaitForChild("Diamonds")
+			:WaitForChild("Amount")
+
+		local currentText = diamondsLabel.Text:gsub(",", ""):lower()
+		local current = tonumber(currentText:match("%d+")) or 0
+
+		if gemAmount and gemAmount > 0 then
+			animateCount(current, gemAmount, diamondsLabel)
+		else
+			Rayfield:Notify({
+				Title = "Invalid Input",
+				Content = "Please enter a valid number.",
+				Duration = 4,
+			})
+		end
+	end,
+})
